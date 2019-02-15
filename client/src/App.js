@@ -80,7 +80,7 @@ class App extends Component {
     } else {
       connection_status = 
         <div>
-          <h5>Connected to local provider...</h5>
+          <h6>Connected to local provider...</h6>
           <ul>
             <li><code>web3.currentProvider.connected</code>: {cp.connected.toString()}</li>
             <li><code>web3.currentProvider.host</code>: {cp.host.toString()}</li>
@@ -88,40 +88,40 @@ class App extends Component {
         </div>;
     }
     return (
-      <div class="container">
-        <div class="row">
-          <div class="col-12">
-            <h2>React+Data Starter Box</h2>
+      <div className="container">
+        <div className="row">
+          <div className="col-12">
+            <h3>React+Data Starter Box</h3>
             <hr/>
           </div>
         </div>
 
-        <div id="simple_storage_box" class="row">
-        <div class="col-12">
-          <div class="panel panel-default">
+        <div id="simple_storage_box" className="row">
+        <div className="col-12">
+          <div className="panel panel-default">
           
 
-            <div class="panel-body">
-              <h3>web3</h3>
+            <div className="panel-body">
+              <h4>web3</h4>
               {connection_status}
 
-              <h3 class="panel-title">SimpleStorage</h3>
+              <hr/>
+
+              <h4>SimpleStorage</h4>
               <ul>
                 <li><code>storage_contract.address</code>: {this.state.storage_contract.address}</li>
               </ul>
 
-              <hr/>
-
+              <h5>SimpleStorage.setInt</h5>
               <ValueToStoreForm 
                 storage_contract={this.state.storage_contract} 
                 account={this.state.accounts[0]} />
-              <hr/>
 
+              <h5>SimpleStorage.getInt</h5>
               <GetStoredValue
                 storage_contract={this.state.storage_contract} 
                 account={this.state.accounts[0]} />    
 
-              <hr/>
             </div>
 
           </div>
@@ -146,39 +146,59 @@ class ValueToStoreForm extends React.Component {
       blockHash: "nothing yet",
       blockNumber: "nothing yet",
       gasUsed: "nothing yet",
+      error_text: "",
     }
   }
 
   handleSubmit = async (event) => {
     event.preventDefault();
+    this.setState({error_text: "",});
 
     const { account, storage_contract } = this.state;
 
     var to_store = this.input.current.value;
     console.log("data: " + to_store);
 
-    const set_response = await storage_contract.setInt(to_store, { from: account });
+    try {
+      const set_response = await storage_contract.setInt(to_store, { from: account });
+      this.setState({ 
+        transactionHash: set_response.tx,
+        blockHash: set_response.receipt.blockHash,
+        blockNumber: set_response.receipt.blockNumber,
+        gasUsed: set_response.receipt.gasUsed,
+       });  
+    } catch(error) {
+			console.log(error)
+      this.setState({error_text: error.toString(),});
+    }
 
-    this.setState({ 
-      transactionHash: set_response.tx,
-      blockHash: set_response.receipt.blockHash,
-      blockNumber: set_response.receipt.blockNumber,
-      gasUsed: set_response.receipt.gasUsed,
-     });
   }
 
+
   render() {
+    const error_message = this.state.error_text ?
+      <div className="alert alert-danger" role="alert">{this.state.error_text}</div> : "";
+
     return (
       <div>
+        {error_message}
         <form onSubmit={this.handleSubmit}>
-            <input id="to_store" name="to_store" type="text" class="form-control" placeholder="a uint to store" ref={this.input} />
-            <button class="btn btn-primary btn-sm" type="submit">Set it!</button>
+
+            <div className="row">
+              <div className="col-sm-1">
+                <input id="to_store" name="to_store" type="text" className="form-control form-control-sm" placeholder="a uint" ref={this.input} />
+              </div>
+              <div className="col">
+                <button className="btn-primary btn-sm" type="submit">setInt(..)</button>
+              </div>
+            </div>
+
         </form>
         <ul>
-          <li>transactionHash: {this.state.transactionHash}</li>
-          <li>blockHash: {this.state.blockHash}</li>
-          <li>blockNumber: {this.state.blockNumber}</li>
-          <li>gasUsed: {this.state.gasUsed}</li>
+          <li><code>response.tx</code>: {this.state.transactionHash}</li>
+          <li><code>response.receipt.blockHash</code>: {this.state.blockHash}</li>
+          <li><code>response.receipt.blockNumber</code>: {this.state.blockNumber}</li>
+          <li><code>response.receipt.gasUsed</code>: {this.state.gasUsed}</li>
         </ul>
       </div>
     );
@@ -189,26 +209,45 @@ class GetStoredValue extends React.Component {
     super(props);
     this.handleGet = this.handleGet.bind(this);
     this.state = {
-      stored_value: null,
+      stored_value: "?",
       storage_contract: this.props.storage_contract,
       account: this.props.account,
+      error_text: "",
     }
   }
 
   handleGet = async (event) => {    
     event.preventDefault();
     const storage_contract = this.state.storage_contract;
-    const response = await storage_contract.getInt.call();
-    console.log("got: " + response.toNumber());
-    this.setState({ stored_value: response.toNumber() });
+
+    try {
+      const response = await storage_contract.getInt.call();
+
+      this.setState({ stored_value: response.toNumber() });
+    } catch(error) {
+			console.log(error)
+      this.setState({error_text: error.toString(),});
+    }
+
+
   }
 
   render() {
+    const error_message = this.state.error_text ?
+      <div className="alert alert-danger" role="alert">{this.state.error_text}</div> : "";
+
     return (
-      <p>
-        <button type="submit" onClick={this.handleGet} class="btn btn-primary btn-sm">Get it!</button>
-        Stored value: {this.state.stored_value}
-      </p>
+      <div>
+        {error_message}
+        <div className="row">
+          <div className="col-sm-1">
+            <button type="submit" onClick={this.handleGet} className="btn btn-primary btn-sm">getInt()</button>
+          </div>
+          <div className="col-sm-1">
+            {this.state.stored_value}
+          </div>
+        </div>
+      </div>
     );
   }
 }
