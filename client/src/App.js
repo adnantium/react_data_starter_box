@@ -166,6 +166,7 @@ class ValueToStoreForm extends React.Component {
         blockHash: set_response.receipt.blockHash,
         blockNumber: set_response.receipt.blockNumber,
         gasUsed: set_response.receipt.gasUsed,
+        logs: set_response.receipt.logs,
        });  
     } catch(error) {
 			console.log(error)
@@ -178,6 +179,14 @@ class ValueToStoreForm extends React.Component {
   render() {
     const error_message = this.state.error_text ?
       <div className="alert alert-danger" role="alert">{this.state.error_text}</div> : "";
+
+    const events_data = this.state.logs ?
+      <ul>
+        <li><code>logs[0].event</code>: {this.state.logs[0].event}</li>
+        <li><code>logs[0].args.new_value</code>: {this.state.logs[0].args.new_value.toString()}</li>
+        <li><code>logs[0].args.old_value</code>: {this.state.logs[0].args.old_value.toString()}</li>
+      </ul>
+      : "nothing yet";
 
     return (
       <div>
@@ -199,6 +208,7 @@ class ValueToStoreForm extends React.Component {
           <li><code>response.receipt.blockHash</code>: {this.state.blockHash}</li>
           <li><code>response.receipt.blockNumber</code>: {this.state.blockNumber}</li>
           <li><code>response.receipt.gasUsed</code>: {this.state.gasUsed}</li>
+          <li><code>response.receipt.logs</code>: {events_data}</li>
         </ul>
       </div>
     );
